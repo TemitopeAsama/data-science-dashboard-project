@@ -54,7 +54,3 @@ def query(func):
         return result
     
     return run_query
-
-
-mixin = QueryMixin()
-mixin.query("SELECT * FROM team")
