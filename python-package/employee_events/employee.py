@@ -49,7 +49,7 @@ class Employee(QueryBase, QueryMixin):
         sql_query = f"""
             SELECT (first_name || ' ' || last_name) AS full_name
             FROM {self.name}
-            WHERE employee.id = ?
+            WHERE employee_id = ?
         """
         return self.query(sql_query, (id,))
 
