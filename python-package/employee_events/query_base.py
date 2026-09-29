@@ -10,6 +10,12 @@ class QueryBase:
     # set the attribute to an empty string
     name = ''
 
+    # Create a class attribute called `id_column`
+    # holding the name of the id column for the
+    # table referenced by `name`. Subclasses override
+    # this with `employee_id` or `team_id`.
+    id_column = ''
+
     # Define a `names` method that receives
     # no passed arguments
     def names(self):
@@ -33,16 +39,18 @@ class QueryBase:
         # order by the event_date column
         sql_query = f"""
             SELECT
-                event_date,
-                SUM(CASE WHEN event_type = 'positive' THEN 1 ELSE 0 END) as positive_events,
-                SUM(CASE WHEN event_type = 'negative' THEN 1 ELSE 0 END) as negative_events
-            FROM {self.name}
-            WHERE {self.id_column} = ?
-            GROUP BY event_date
-            ORDER BY event_date ASC
+                evt.event_date,
+                SUM(evt.positive_events) AS positive_events,
+                SUM(evt.negative_events) AS negative_events
+            FROM employee_events AS evt
+            JOIN {self.name} AS e
+                ON evt.{self.id_column} = e.{self.id_column}
+            WHERE e.{self.id_column} = ?
+            GROUP BY evt.event_date
+            ORDER BY evt.event_date ASC
         """
 
-        return pd.read_sql_query(sql_query, self.connection, params=(id,))
+        return self.pandas_query(sql_query, (id,))
             
     
 
@@ -65,7 +73,7 @@ class QueryBase:
             JOIN {self.name} AS e ON n.{self.id_column} = e.{self.id_column}
             WHERE e.{self.id_column} = ?
         """
-        return pd.read_sql_query(sql_query, self.connection, params=(id,))
+        return self.pandas_query(sql_query, (id,))
 
     
 

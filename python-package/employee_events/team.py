@@ -12,6 +12,10 @@ class Team(QueryBase, QueryMixin):
     # to the string "team"
     name: str = "team"
 
+    # Set the class attribute `id_column`
+    # to the string "team_id"
+    id_column: str = "team_id"
+
 
     # Define a `names` method
     # that receives no arguments
@@ -70,8 +74,8 @@ class Team(QueryBase, QueryMixin):
                     FROM {self.name}
                     JOIN employee_events
                         USING({self.name}_id)
-                    WHERE {self.name}.{self.name}_id = {id}
+                    WHERE {self.name}.{self.name}_id = ?
                     GROUP BY employee_id
                    )
                 """
-        return self.pandas_query(sql_query)
+        return self.pandas_query(sql_query, (id,))

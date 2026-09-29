@@ -16,10 +16,12 @@ class QueryMixin:
     # that receives an sql query as a string
     # and returns the query's result
     # as a pandas dataframe
-    def pandas_query(self, sql_query: str) -> pd.DataFrame:
+    def pandas_query(self, sql_query: str, params: tuple = ()) -> pd.DataFrame:
         connection = connect(db_path)
-        result = pd.read_sql_query(sql_query, connection)
-        connection.close()
+        try:
+            result = pd.read_sql_query(sql_query, connection, params=params)
+        finally:
+            connection.close()
         return result
 
     # Define a method named `query`
@@ -27,13 +29,15 @@ class QueryMixin:
     # and returns the query's result as
     # a list of tuples. (You will need
     # to use an sqlite3 cursor)
-    def query(self, sql_query: str) -> list[tuple]:
-       connection = connect(db_path)
-       cursor = connection.cursor()
-       cursor.execute(sql_query)
-       result = cursor.fetchall()
-       print(result)
-       return result
+    def query(self, sql_query: str, params: tuple = ()) -> list[tuple]:
+        connection = connect(db_path)
+        try:
+            cursor = connection.cursor()
+            cursor.execute(sql_query, params)
+            result = cursor.fetchall()
+        finally:
+            connection.close()
+        return result
     
 
  

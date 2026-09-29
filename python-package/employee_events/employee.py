@@ -13,6 +13,10 @@ class Employee(QueryBase, QueryMixin):
     # to the string "employee"
     name: str = "employee"
 
+    # Set the class attribute `id_column`
+    # to the string "employee_id"
+    id_column: str = "employee_id"
+
 
     # Define a method called `names`
     # that receives no arguments
@@ -70,7 +74,7 @@ class Employee(QueryBase, QueryMixin):
                     FROM {self.name}
                     JOIN employee_events
                         USING({self.name}_id)
-                    WHERE {self.name}.{self.name}_id = {id}
+                    WHERE {self.name}.{self.name}_id = ?
             """
-        return self.pandas_query(sql_query)
+        return self.pandas_query(sql_query, (id,))
     
