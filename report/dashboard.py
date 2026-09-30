@@ -33,7 +33,7 @@ class Header(BaseComponent):
 
     def build_component(self, entity_id, model):
 
-        return H1(model.name.title())
+        return H1(f"{model.name.title()} Performance")
 
 
 # Cumulative positive/negative event counts over time
@@ -77,7 +77,18 @@ class BarChart(MatplotlibViz):
             pred = probability_of_recruitment[0]
 
         fig, ax = plt.subplots()
-        ax.barh([''], [pred])
+
+        # Continuous color scale across the observed prediction range:
+        # green for low risk through amber to red for high. This model
+        # never predicts above ~0.2, so a fixed 0-1 domain would render
+        # every bar the same green; mapping to the real range keeps the
+        # color informative.
+        low, high = 0.0, 0.21
+        t = (float(pred) - low) / (high - low)
+        t = min(max(t, 0.0), 1.0)
+        bar_color = plt.get_cmap('RdYlGn_r')(t)
+
+        ax.barh([''], [pred], color=bar_color)
         ax.set_xlim(0, 1)
         ax.set_title('Predicted Recruitment Risk', fontsize=20)
         self.set_axis_styling(ax, bordercolor='black', fontcolor='black')
@@ -143,7 +154,8 @@ report_css = (Path(__file__).resolve().parent.parent
               / "assets" / "report.css").read_text()
 
 app = FastHTML(
-    title="Employee Events Report",
+    # Overridden per request by the Title in Header
+    title="Employee Performance",
     hdrs=[Style(report_css)],
     )
 
@@ -155,9 +167,15 @@ def valid_ids(model):
     return {str(value) for _, value in model.names()}
 
 
+def render(entity_id, model):
+    """Render the report and set the page title to match the filter."""
+    app.title = f"{model.name.title()} Performance"
+    return report(entity_id, model)
+
+
 @app.get('/')
 def get_root():
-    return report(1, Employee())
+    return render(1, Employee())
 
 
 @app.get('/employee/{employee_id}')
@@ -168,7 +186,7 @@ def get_employee(employee_id: str):
     if employee_id not in valid_ids(Employee()):
         return RedirectResponse('/employee/1', status_code=303)
 
-    return report(employee_id, Employee())
+    return render(employee_id, Employee())
 
 
 @app.get('/team/{team_id}')
@@ -179,7 +197,7 @@ def get_team(team_id: str):
     if team_id not in valid_ids(Team()):
         return RedirectResponse('/team/1', status_code=303)
 
-    return report(team_id, Team())
+    return render(team_id, Team())
 
 
 # Repopulate the dropdown when the entity type changes
