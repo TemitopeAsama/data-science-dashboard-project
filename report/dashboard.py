@@ -1,17 +1,12 @@
 from fasthtml.common import *
 import matplotlib.pyplot as plt
 from pandas import options
+from pathlib import Path
+from fasthtml.common import RedirectResponse
 
-# Import QueryBase, Employee, Team from employee_events
 from employee_events import QueryBase, Employee, Team
-
-# import the load_model function from the utils.py file
 from utils import load_model
 
-"""
-Below, we import the parent classes
-you will use for subclassing
-"""
 from base_components import (
     Dropdown,
     BaseComponent,
@@ -23,186 +18,106 @@ from base_components import (
 from combined_components import FormGroup, CombinedComponent
 
 
-# Create a subclass of base_components/dropdown
-# called `ReportDropdown`
 class ReportDropdown(Dropdown):
 
-    # Overwrite the build_component method
-    # ensuring it has the same parameters
-    # as the Report parent class's method
+    # The label follows whichever entity type is being viewed
     def build_component(self, entity_id, model):
-
-        #  Set the `label` attribute so it is set
-        #  to the `name` attribute for the model
         self.label = model.name.title()
-
-        # Return the output from the
-        # parent class's build_component method
         return super().build_component(entity_id, model)
 
-    # Overwrite the `component_data` method
-    # Ensure the method uses the same parameters
-    # as the parent class method
     def component_data(self, entity_id, model):
-        # Using the model argument
-        # call the employee_events method
-        # that returns the user-type's
-        # names and ids
         return model.names()
 
 
-# Create a subclass of base_components/BaseComponent
-# called `Header`
 class Header(BaseComponent):
 
-    # Overwrite the `build_component` method
-    # Ensure the method has the same parameters
-    # as the parent class
     def build_component(self, entity_id, model):
 
-        # Using the model argument for this method
-        # return a fasthtml H1 objects
-        # containing the model's name attribute
-        return H1(model.name.title())
+        return H1(f"{model.name.title()} Performance")
 
 
-# Create a subclass of base_components/MatplotlibViz
-# called `LineChart`
+# Cumulative positive/negative event counts over time
 class LineChart(MatplotlibViz):
 
-    # Overwrite the parent class's `visualization`
-    # method. Use the same parameters as the parent
     def visualization(self, entity_id, model):
 
-        # Pass the `entity_id` argument to
-        # the model's `event_counts` method to
-        # receive the x (Day) and y (event count)
         data = model.event_counts(entity_id)
-
-        # Use the pandas .fillna method to fill nulls with 0
         data = data.fillna(0)
-
-        # User the pandas .set_index method to set
-        # the date column as the index
         data = data.set_index('event_date')
-
-        # Sort the index
         data = data.sort_index()
 
-        # Use the .cumsum method to change the data
-        # in the dataframe to cumulative counts
         cumulative = data.cumsum()
-
-        # Set the dataframe columns to the list
-        # ['Positive', 'Negative']
         cumulative.columns = ['Positive', 'Negative']
 
-        # Initialize a pandas subplot
-        # and assign the figure and axis
-        # to variables
         fig, ax = plt.subplots()
-
-        # call the .plot method for the
-        # cumulative counts dataframe
         cumulative.plot(ax=ax)
 
-        # pass the axis variable
-        # to the `.set_axis_styling`
-        # method
-        # Use keyword arguments to set
-        # the border color and font color to black.
-        # Reference the base_components/matplotlib_viz file
-        # to inspect the supported keyword arguments
         self.set_axis_styling(ax, bordercolor='black', fontcolor='black')
 
-        # Set title and labels for x and y axis
         ax.set_title(f"{model.name.title()} Event Counts")
         ax.set_xlabel("Date")
         ax.set_ylabel("Cumulative Events")
 
 
-# Create a subclass of base_components/MatplotlibViz
-# called `BarChart`
+# Predicted probability of being recruited
 class BarChart(MatplotlibViz):
 
-    # Create a `predictor` class attribute
-    # assign the attribute to the output
-    # of the `load_model` utils function
     predictor = load_model()
 
-    # Overwrite the parent class `visualization` method
-    # Use the same parameters as the parent
     def visualization(self, entity_id, model):
 
-        # Using the model and entity_id arguments
-        # pass the `entity_id` to the `.model_data` method
-        # to receive the data that can be passed to the machine
-        # learning model
         data = model.model_data(entity_id)
+        probability_of_recruitment = self.predictor.predict_proba(data)[:, 1]
 
-        # Using the predictor class attribute
-        # pass the data to the `predict_proba` method
-        probability_of_recruitment = self.predictor.predict_proba(data)
-
-        # Index the second column of predict_proba output
-        # The shape should be (<number of records>, 1)
-        probability_of_recruitment = probability_of_recruitment[:, 1]
-
-        # Below, create a `pred` variable set to
-        # the number we want to visualize
-        #
-        # If the model's name attribute is "team"
-        # We want to visualize the mean of the predict_proba output
+        # A team's model_data returns one row per member, so a team is
+        # summarized by its mean; an employee has a single row
         if model.name == 'team':
             pred = probability_of_recruitment.mean()
-
-        # Otherwise set `pred` to the first value
-        # of the predict_proba output
         else:
             pred = probability_of_recruitment[0]
 
-        # Initialize a matplotlib subplot
         fig, ax = plt.subplots()
 
-        # Run the following code unchanged
-        ax.barh([''], [pred])
+        # Continuous color scale across the observed prediction range:
+        # green for low risk through amber to red for high. This model
+        # never predicts above ~0.2, so a fixed 0-1 domain would render
+        # every bar the same green; mapping to the real range keeps the
+        # color informative.
+        low, high = 0.0, 0.21
+        t = (float(pred) - low) / (high - low)
+        t = min(max(t, 0.0), 1.0)
+        bar_color = plt.get_cmap('RdYlGn_r')(t)
+
+        ax.barh([''], [pred], color=bar_color)
         ax.set_xlim(0, 1)
         ax.set_title('Predicted Recruitment Risk', fontsize=20)
-
-        # pass the axis variable
-        # to the `.set_axis_styling`
-        # method
         self.set_axis_styling(ax, bordercolor='black', fontcolor='black')
 
 
-# Create a subclass of combined_components/CombinedComponent
-# called Visualizations
+# The two charts, side by side
 class Visualizations(CombinedComponent):
 
-    # Set the `children`
-    # class attribute to a list
-    # containing an initialized
-    # instance of `LineChart` and `BarChart`
     children = [
         LineChart(),
         BarChart()
     ]
 
-    # Leave this line unchanged
     outer_div_type = Div(cls='grid')
 
-# Create a subclass of base_components/DataTable
-# called `NotesTable`
+
 class NotesTable(DataTable):
 
-    # Overwrite the `component_data` method
-    # using the same parameters as the parent class
     def component_data(self, entity_id, model):
 
-        # Using the model and entity_id arguments
-        # pass the entity_id to the model's .notes
-        # method. Return the output
-        return model.notes(entity_id)
+        notes = model.notes(entity_id)
+
+        notes = notes.rename(columns={
+            'note_date': 'Date',
+            'note': 'Note',
+            })
+
+        # Newest note first
+        return notes.sort_values('Date', ascending=False)
 
 
 class DashboardFilters(FormGroup):
@@ -223,15 +138,8 @@ class DashboardFilters(FormGroup):
             name="user-selection")
         ]
 
-# Create a subclass of CombinedComponents
-# called `Report`
 class Report(CombinedComponent):
 
-    # Set the `children`
-    # class attribute to a list
-    # containing initialized instances
-    # of the header, dashboard filters,
-    # data visualizations, and notes table
     children = [
         Header(),
         DashboardFilters(),
@@ -239,64 +147,63 @@ class Report(CombinedComponent):
         NotesTable()
     ]
 
-# Initialize a fasthtml app
-app = FastHTML()
+# The stylesheet lives in ../assets relative to this file.
+# Passing it via `hdrs` puts the <style> tag in the document
+# <head> that fasthtl generates around every response.
+report_css = (Path(__file__).resolve().parent.parent
+              / "assets" / "report.css").read_text()
 
-# Initialize the `Report` class
+app = FastHTML(
+    # Overridden per request by the Title in Header
+    title="Employee Performance",
+    hdrs=[Style(report_css)],
+    )
+
 report = Report()
 
 
-# Create a route for a get request
-# Set the route's path to the root
+def valid_ids(model):
+    """The ids that actually exist for a model, as strings."""
+    return {str(value) for _, value in model.names()}
+
+
+def render(entity_id, model):
+    """Render the report and set the page title to match the filter."""
+    app.title = f"{model.name.title()} Performance"
+    return report(entity_id, model)
+
+
 @app.get('/')
 def get_root():
-
-    # Call the initialized report
-    # pass the integer 1 and an instance
-    # of the Employee class as arguments
-    # Return the result
-    return report(1, Employee())
+    return render(1, Employee())
 
 
-# Create a route for a get request
-# Set the route's path to receive a request
-# for an employee ID so `/employee/2`
-# will return the page for the employee with
-# an ID of `2`.
-# parameterize the employee ID
-# to a string datatype
 @app.get('/employee/{employee_id}')
 def get_employee(employee_id: str):
 
-    # Call the initialized report
-    # pass the ID and an instance
-    # of the Employee SQL class as arguments
-    # Return the result
-    return report(employee_id, Employee())
+    # An id with no matching row makes event_counts return an empty
+    # frame, and matplotlib raises "no numeric data to plot" on it.
+    if employee_id not in valid_ids(Employee()):
+        return RedirectResponse('/employee/1', status_code=303)
+
+    return render(employee_id, Employee())
 
 
-# Create a route for a get request
-# Set the route's path to receive a request
-# for a team ID so `/team/2`
-# will return the page for the team with
-# an ID of `2`.
-# parameterize the team ID
-# to a string datatype
 @app.get('/team/{team_id}')
 def get_team(team_id: str):
 
-    # Call the initialized report
-    # pass the id and an instance
-    # of the Team SQL class as arguments
-    # Return the result
-    return report(team_id, Team())
+    # Same guard as the employee route: an unknown id yields no rows
+    # to plot.
+    if team_id not in valid_ids(Team()):
+        return RedirectResponse('/team/1', status_code=303)
+
+    return render(team_id, Team())
 
 
-# Keep the below code unchanged!
+# Repopulate the dropdown when the entity type changes
 @app.get('/update_dropdown{r}')
 def update_dropdown(r):
     dropdown = DashboardFilters.children[1]
-    print('PARAM', r.query_params['profile_type'])
     if r.query_params['profile_type'] == 'Team':
         return dropdown(None, Team())
     elif r.query_params['profile_type'] == 'Employee':
@@ -305,7 +212,6 @@ def update_dropdown(r):
 
 @app.post('/update_data')
 async def update_data(r):
-    from fasthtml.common import RedirectResponse
     data = await r.form()
     profile_type = data._dict['profile_type']
     id = data._dict['user-selection']

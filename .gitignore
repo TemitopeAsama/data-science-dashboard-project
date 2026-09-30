@@ -10,7 +10,10 @@ __pycache__/
 .Python
 build/
 develop-eggs/
+# The project rubric requires the built package to be committed
 dist/
+!python-package/dist/
+!python-package/dist/**
 downloads/
 eggs/
 .eggs/
@@ -169,10 +172,12 @@ cython_debug/
 venv/
 .env
 
-# Build artifacts from `python setup.py sdist` / `pip wheel`
+# Build artifacts from `pip wheel`
 build/
-dist/
 python-package/*.egg-info/
 
+# Note: python-package/dist/ is intentionally NOT ignored. The rubric
+# requires the built .tar.gz to be present in the repository.
+#
 # Note: employee_events.db, assets/model.pkl, and src/generated_data/*.json
 # are intentionally tracked. The dashboard and tests require them.
