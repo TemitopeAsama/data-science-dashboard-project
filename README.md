@@ -1,7 +1,39 @@
 
-# Software Engineering for Data Scientists 
+# Employee Events Report (A Data Science Dashboard Project)
 
-This repository contains starter code for the **Software Engineering for Data Scientists** final project. Please reference your course materials for documentation on this repository's structure and important files. Happy coding!
+A web dashboard for exploring employee performance data and the likelihood that
+an employee or team will be recruited.
+
+Data is generated as fictional but realistic employee records — 25 employees
+across 5 teams, each assigned a behavioral profile that shapes how many positive
+and negative events they accumulate over time. A logistic regression model is
+trained on those event counts to predict recruitment.
+
+The dashboard lets you pick an employee or a team and shows two visualizations
+alongside the notes recorded against that entity:
+
+- **Event counts over time** — cumulative positive and negative events by date
+- **Predicted recruitment risk** — the model's probability for that entity,
+  shown as a single bar
+
+## How it works
+
+`src/build_project_assets.py` generates the data, writes it to a SQLite
+database, and trains the model saved in `assets/model.pkl`. The
+`employee_events` Python package wraps that database in a small query API. The
+`report/` directory contains a [fasthtl](https://fasthtml.com) application that
+composes reusable UI components to render the dashboard.
+
+Run it from inside `report/`:
+
+```bash
+pip install -r requirements.txt
+cd report
+python dashboard.py
+```
+
+Then open the URL printed at startup. The Employee/Team toggle swaps the
+entity dropdown without a full page reload.
 
 ### Repository Structure
 ```
