@@ -147,14 +147,10 @@ class Report(CombinedComponent):
         NotesTable()
     ]
 
-# The stylesheet lives in ../assets relative to this file.
-# Passing it via `hdrs` puts the <style> tag in the document
-# <head> that fasthtl generates around every response.
 report_css = (Path(__file__).resolve().parent.parent
               / "assets" / "report.css").read_text()
 
 app = FastHTML(
-    # Overridden per request by the Title in Header
     title="Employee Performance",
     hdrs=[Style(report_css)],
     )

@@ -15,9 +15,6 @@ class Radio(BaseComponent):
 
         children = []
         for value in self.values:
-            # None, not "", so fasthtl omits the attribute entirely.
-            # An empty string still renders `checked=""`, which would
-            # leave both radios checked.
             is_checked = "checked" if value == model.name.title() else None
             input_child = Input(type="radio", id=value.lower(), name=self.name, value=value, hx_get=self.hx_get, hx_target=self.hx_target, checked=is_checked)
             label_child = Label(value, _for=value.lower())
