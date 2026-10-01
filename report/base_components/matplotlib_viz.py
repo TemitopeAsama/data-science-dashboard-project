@@ -20,7 +20,7 @@ def matplotlib2fasthtml(func):
     image format as jpg. png or svg is needed here.
     '''
     def wrapper(*args, **kwargs):
-        # Reset the figure to prevent accumulation. Maybe we need a setting for this?
+        # Reset the figure to prevent accumulation.
         fig = plt.figure()
 
         # Run function as normal

@@ -27,7 +27,6 @@ class QueryMixin:
     
 
  
- # Leave this code unchanged
 def query(func):
     """
     Decorator that runs a standard sql execution

@@ -16,7 +16,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # matplotlib>=3.11 requires 3.11 or newer
         python-version: ['3.14']
 
     steps:

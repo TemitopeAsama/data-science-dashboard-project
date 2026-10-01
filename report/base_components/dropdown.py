@@ -13,11 +13,7 @@ class Dropdown(BaseComponent):
         options = []
         for text, value in self.component_data(entity_id, model):
             # Only mark an option selected when an entity is actually
-            # being viewed. `entity_id` is None on the dropdown-swap
-            # request. Note the attribute must be None rather than "":
-            # fasthtl renders any non-None value, and an empty string
-            # still emits `selected=""`, which marks every option
-            # selected and leaves the browser showing the first one.
+            # being viewed.
             is_selected = (
                 "selected"
                 if entity_id is not None and str(value) == str(entity_id)
