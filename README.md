@@ -1,28 +1,37 @@
 
-# Employee Events Report (A Data Science Dashboard Project)
+# Employee Events Report
 
-A web dashboard for exploring employee performance data and the likelihood that
-an employee or team will be recruited.
+A web dashboard for exploring employee performance data and the likelihood that an employee or team will be recruited.
 
-Data is generated as fictional but realistic employee records — 25 employees
-across 5 teams, each assigned a behavioral profile that shapes how many positive
-and negative events they accumulate over time. A logistic regression model is
-trained on those event counts to predict recruitment.
+Data is generated as fictional but realistic employee records — 25 employees across 5 teams, each assigned a behavioral profile that shapes how many positive and negative events they accumulate over time. A logistic regression model is trained on those event counts to predict recruitment.
 
-The dashboard lets you pick an employee or a team and shows two visualizations
-alongside the notes recorded against that entity:
+The dashboard lets you pick an employee or a team and shows two visualizations alongside the notes recorded against that entity:
 
 - **Event counts over time** — cumulative positive and negative events by date
-- **Predicted recruitment risk** — the model's probability for that entity,
-  shown as a single bar
+- **Predicted recruitment risk** — the model's probability for that entity, shown as a single bar
+
+![Dashboard - Employee View](./assets/images/employee.png)
+*<sub>Employee selection view showing event trends and recruitment risk.</sub>*
+
+![Dashboard - Team View](./assets/images/team.png)
+*<sub>Team selection view with aggregated events and predicted recruitment risk.</sub>*
+
+## Tech Stack
+
+- **Frontend/UI**: [FastHTML](https://fasthtml.com/) for server-side HTML rendering
+- **Styling**: Custom CSS in `assets/report.css`
+- **Visualization**: [Matplotlib](https://matplotlib.org/) for plotting event counts and risk bar
+- **Data/ML**: [scikit-learn](https://scikit-learn.org/) (Logistic Regression), [pandas](https://pandas.pydata.org/) for data generation and manipulation
+- **Database**: [SQLite](https://sqlite.org/) for storing employees, events, notes, and teams
+- **Backend/Package**: Python package (`employee_events`) providing a query API over the database
 
 ## How it works
 
-`src/build_project_assets.py` generates the data, writes it to a SQLite
-database, and trains the model saved in `assets/model.pkl`. The
-`employee_events` Python package wraps that database in a small query API. The
-`report/` directory contains a [fasthtl](https://fasthtml.com) application that
-composes reusable UI components to render the dashboard.
+- `src/build_project_assets.py` generates the data, writes it to a SQLite database, and trains the model saved in `assets/model.pkl`. 
+
+- The `employee_events` Python package wraps that database in a small query API. 
+
+- The `report/` directory contains a [fasthtml](https://fasthtml.com) application that composes reusable UI components to render the dashboard.
 
 Run it from inside `report/`:
 
@@ -32,8 +41,7 @@ cd report
 python dashboard.py
 ```
 
-Then open the URL printed at startup. The Employee/Team toggle swaps the
-entity dropdown without a full page reload.
+Then open the URL printed at startup. The Employee/Team toggle swaps the entity dropdown without a full page reload.
 
 ### Repository Structure
 ```
